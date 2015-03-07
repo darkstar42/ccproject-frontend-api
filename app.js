@@ -18,6 +18,7 @@ var nconf = require('nconf').file({
 /**
  * Logging
  */
+var ConsoleStream = require(path.join(__dirname, 'helpers', 'consoleStream.js'));
 var Logger = bunyan.createLogger({
     name: nconf.get('Logging:Name'),
     serializers: {
@@ -27,6 +28,10 @@ var Logger = bunyan.createLogger({
     streams: [
         {
             path: path.join(nconf.get('Logging:Dir'), process.env.NODE_ENV + '-' + nconf.get('Server:Name') + '.log')
+        },
+        {
+            stream: process.stdout,
+            level: 'trace'
         }
     ]
 });
@@ -84,7 +89,7 @@ var corsOptions = {
 server.pre(restify.CORS(corsOptions));
 
 if (corsOptions.headers.length) {
-    server.on('MethodNotAllowed', require(path.join(__dirname, 'helpers', 'corsHelper.js'))());
+    server.on('MethodNotAllowed', require(path.join(__dirname, 'helpers', 'corsHelper.js'))(corsOptions));
 }
 
 /**
@@ -123,7 +128,8 @@ var setupMiddleware = function(middlewareName) {
 };
 
 [
-    'root'
+    'root',
+    'auth'
 ].forEach(setupMiddleware);
 
 /**

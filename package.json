@@ -13,7 +13,8 @@
     "lodash": "3.4.0",
     "nconf": "0.7.1",
     "request": "2.53.0",
-    "restify": "2.8.5"
+    "restify": "2.8.5",
+    "jsonwebtoken": "4.0.0"
   },
 
   "devDependencies": {

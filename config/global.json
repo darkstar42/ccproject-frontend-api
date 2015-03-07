@@ -19,8 +19,12 @@
 
   "CORS": {
     "Credentials": false,
-    "Origins": [],
-    "Headers": []
+    "Origins": [
+      "*"
+    ],
+    "Headers": [
+      "authorization"
+    ]
   },
 
   "Security": {
@@ -28,6 +32,7 @@
     "UseACL": true,
     "Scheme": "Custom",
     "StringToSign": "X-Custom-Date",
+    "AuthKey": "katze",
     "AllowAnonymous": true,
     "Users": [
       {
@@ -38,11 +43,15 @@
     "ACL": {
       "Rules": [
         {
-          "roles": [ "anonym1ous" ],
+          "roles": [ "anonymous" ],
           "allows": [
             {
-              "resources": "/#1.0.0",
+              "resources": "/#1",
               "permissions": "get"
+            },
+            {
+              "resources": "/auth#1",
+              "permissions": [ "get", "post" ]
             }
           ]
         }

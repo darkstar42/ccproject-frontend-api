@@ -16,7 +16,7 @@ routes.push({
         paths: [
             '/'
         ],
-        version: '1.0.0'
+        version: '1'
     },
     middleware: function(req, res, next) {
         res.send({

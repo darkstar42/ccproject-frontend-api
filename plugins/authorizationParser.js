@@ -9,114 +9,69 @@ var path = require('path');
 var _ = require('lodash');
 var nconf = require('nconf').file({
     file: path.join(__dirname, '..', 'config', 'global.json')
-})
+});
 var restify = require('restify');
+var jwt = require('jsonwebtoken');
 
-/**
- * Returns auth header pieces
- */
-var parseAuthHeader = function(authHeader) {
-    authHeader = authHeader.split(' ', 2);
+var secret = nconf.get('Security:AuthKey');
+var credentialsRequired = false;
 
-    if (authHeader.length !== 2) return null;
+var options = {};
 
-    return {
-        raw: authHeader.join(' '),
-        scheme: authHeader[0],
-        key: authHeader[1].split(':')[0],
-        signature: authHeader[1].splice(':')[1]
-    };
-};
 
-/**
- * Returns a request signature
- */
-var getSignature = function(key, secret, stringToSign) {
-    return 'katze';
-};
-
-/**
- * Returns a plugin that will parse the client's Authorization header
- *
- * @return {Function} restify handler
- * @throws {TypeError} on bad input
- */
 module.exports = function() {
     var parseAuthorization = function(req, res, next) {
-        var credentialList = nconf.get('Security:Users');
-        var allowAnon = nconf.get('Security:AllowAnonymous');
-        var authHeader;
-        var user;
+        var token;
 
-        var stringToSign = nconf.get('Security:StringToSign');
+        if (req.method === 'OPTIONS' && req.headers.hasOwnProperty('access-control-request-headers')) {
+            var hasAuthInAccessControl = !!~req.headers['access-control-request-headers']
+                .split(',').map(function(header) {
+                    return header.trim();
+                }).indexOf('authorization');
 
-        // Skip if anonymous are allowed
-        if (allowAnon && !req.headers.authorization) {
+            if (hasAuthInAccessControl) return next();
+        }
+
+        if (false) {
+
+        } else if (req.headers && req.headers.authorization) {
+            var parts = req.headers.authorization.split(' ');
+
+            if (parts.length == 2) {
+                var scheme = parts[0];
+                var credentials = parts[1];
+
+                if (/^Bearer$/i.test(scheme)) {
+                    token = credentials;
+                }
+            } else {
+                return next(new restify.errors.InvalidCredentials('Format is Authorization: Bearer [token]'));
+            }
+        }
+
+        if (!token) {
+            if (credentialsRequired) {
+                return next(new restify.errors.InvalidCredentials('No authorization token was found'));
+            } else {
+                req.user = {
+                    name: 'anonymous',
+                    role: 'anonymous'
+                };
+
+                return next();
+            }
+        }
+
+        jwt.verify(token, secret, options, function(err, decoded) {
+            if (err && credentialsRequired) return next(new restify.errors.InvalidCredentials(err));
+
             req.user = {
-                name: 'anonymous'
+                name: decoded.user,
+                role: decoded.role
             };
 
-            return next();
-        }
-
-        // Validate headers
-        if (!req.headers.authorization) {
-            return next(new restify.InvalidHeaderError('Authorization header required'));
-        }
-
-        if (!req.headers[stringToSign.toLowerCase()]) {
-            return next(new restify.InvalidHeaderError('Authorization wont work: "' + stringToSign + '" missing'));
-        }
-
-        // Parse auth header
-        authHeader = parseAuthHeader(req.headers.authorization);
-
-        if (authHeader === null) {
-            return next(new restify.InvalidHeaderError('Authorization header is invalid'));
-        }
-
-        // Fill authorization object
-        req.authorization = {
-            scheme: authHeader.scheme,
-            credentials: authHeader.credentials
-        };
-
-        // Validate authorization object
-        if (req.authorization.scheme.toLowerCase() !== nconf.get('Security:Scheme').toLowerCase()) {
-            return next(new restify.InvalidHeaderError('Authorization scheme is invalid'));
-        }
-
-        req.authorization[req.authorization.scheme] = {
-            key : authHeader.key,
-            signature: authHeader.signature,
-            date: req.headers[stringToSign.toLowerCase()]
-        };
-
-        // grab credentials
-        user = _.where(credentialList, {
-            key: req.authorization[req.authorization.scheme].key
-        }).pop();
-
-        // check user
-        if (!user) {
-            return next(new restify.NotAuthorizedError('Authorization key unknown'));
-        }
-
-        // Set user information
-        req.user = user;
-
-        // Get check signature
-        var checkSignature = getSignature(
-            req.authorization[req.authorization.scheme].key,
-            user.secret,
-            req.authorization[req.authorization.scheme].date
-        );
-
-        if (checkSignature !== req.authorization[req.authorization.scheme].signature) {
-            return next(new restify.NotAuthorizedError('Authorization signature is invalid'));
-        }
-
-        return next();
+            next();
+        });
     };
 
     return parseAuthorization;
