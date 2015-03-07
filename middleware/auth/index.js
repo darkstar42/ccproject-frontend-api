@@ -32,7 +32,7 @@ routes.push({
         var secret = nconf.get('Security:AuthKey');
         var payload = {
             user: req.body.username,
-            role: req.body.password
+            role: 'user'
         };
         var options = {
             expiresInMinutes: 60,
