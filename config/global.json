@@ -1,0 +1,52 @@
+{
+  "App": {
+    "Name": "ccproject-frontend-api"
+  },
+
+  "Server": {
+    "Port": 1337,
+    "Name": "api.example.com",
+    "DefaultVersion": "0.0.1",
+    "Acceptable": [ "application/json" ],
+    "ThrottleRate": 50,
+    "ThrottleBurst": 100
+  },
+
+  "Logging": {
+    "Name": "AuditLogging",
+    "Dir": "./logs/"
+  },
+
+  "CORS": {
+    "Credentials": false,
+    "Origins": [],
+    "Headers": []
+  },
+
+  "Security": {
+    "UseAuth": true,
+    "UseACL": true,
+    "Scheme": "Custom",
+    "StringToSign": "X-Custom-Date",
+    "AllowAnonymous": true,
+    "Users": [
+      {
+        "name": "anonymous",
+        "role": "anonymous"
+      }
+    ],
+    "ACL": {
+      "Rules": [
+        {
+          "roles": [ "anonym1ous" ],
+          "allows": [
+            {
+              "resources": "/#1.0.0",
+              "permissions": "get"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
