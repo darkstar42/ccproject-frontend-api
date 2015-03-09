@@ -114,6 +114,12 @@ UserService.prototype.getUserByName = function(username, callback) {
 UserService.prototype.saveUser = function(user, callback) {
     if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
 
+    var rawAttributes = user.attributes;
+    var structAttributes = {};
+    Object.keys(rawAttributes).forEach(function(attributeName) {
+        structAttributes[attributeName] = { S: rawAttributes[attributeName] };
+    });
+
     var params = {
         Key: {
             userId: {
@@ -121,14 +127,15 @@ UserService.prototype.saveUser = function(user, callback) {
             }
         },
         TableName: 'CCUsers',
-        UpdateExpression: 'set #name = :name, #role = :role, #passwordSalt = :passwordSalt, #passwordHash = :passwordHash, #createdDate = :createdDate, #modifiedDate = :modifiedDate',
+        UpdateExpression: 'set #name = :name, #role = :role, #passwordSalt = :passwordSalt, #passwordHash = :passwordHash, #createdDate = :createdDate, #modifiedDate = :modifiedDate, #attributes = :attributes',
         ExpressionAttributeNames: {
             '#name': 'name',
             '#role': 'role',
             '#passwordSalt': 'passwordSalt',
             '#passwordHash': 'passwordHash',
             '#createdDate': 'createdDate',
-            '#modifiedDate': 'modifiedDate'
+            '#modifiedDate': 'modifiedDate',
+            '#attributes': 'attributes'
         },
         ExpressionAttributeValues: {
             ':name': {
@@ -148,6 +155,9 @@ UserService.prototype.saveUser = function(user, callback) {
             },
             ':modifiedDate': {
                 'S': user.modifiedDate.toISOString()
+            },
+            ':attributes': {
+                'M': structAttributes
             }
         }
     };
@@ -160,6 +170,12 @@ UserService.prototype.saveUser = function(user, callback) {
 };
 
 UserService.prototype.mapDBFile = function(dbUser) {
+    var structAttributes = dbUser.attributes.M;
+    var rawAttributes = {};
+    Object.keys(structAttributes).forEach(function(attributeName) {
+        rawAttributes[attributeName] = structAttributes[attributeName].S;
+    });
+
     return {
         userId: dbUser.userId['S'],
         name: dbUser.name['S'],
@@ -167,7 +183,8 @@ UserService.prototype.mapDBFile = function(dbUser) {
         passwordHash: dbUser.passwordHash['S'],
         passwordSalt: dbUser.passwordSalt['S'],
         createdDate: new Date(dbUser.createdDate['S']),
-        modifiedDate: new Date(dbUser.modifiedDate['S'])
+        modifiedDate: new Date(dbUser.modifiedDate['S']),
+        attributes: rawAttributes
     };
 };
 
@@ -184,7 +201,8 @@ UserService.prototype.createUser = function(username, password, role) {
         passwordHash: hash,
         passwordSalt: salt,
         createdDate: new Date(),
-        modifiedDate: new Date()
+        modifiedDate: new Date(),
+        attributes: {}
     };
 
     return user;
