@@ -14,7 +14,11 @@
     "nconf": "0.7.1",
     "request": "2.53.0",
     "restify": "2.8.5",
-    "jsonwebtoken": "4.0.0"
+    "jsonwebtoken": "4.0.0",
+    "aws-sdk": "2.1.16",
+    "node-uuid": "1.4.3",
+    "bcrypt": "0.8.1",
+    "semver": "4.3.1"
   },
 
   "devDependencies": {

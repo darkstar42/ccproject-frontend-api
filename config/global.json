@@ -52,6 +52,19 @@
             {
               "resources": "/auth#1",
               "permissions": [ "get", "post" ]
+            },
+            {
+              "resources": "/auth/register#1",
+              "permissions": [ "post" ]
+            }
+          ]
+        },
+        {
+          "roles": [ "user" ],
+          "allows": [
+            {
+              "resources": "/upload#1",
+              "permissions": [ "post" ]
             }
           ]
         }

@@ -13,6 +13,8 @@ lib-cov
 pids
 results
 
+config/aws.json
+
 node_modules
 npm-debug.log
 

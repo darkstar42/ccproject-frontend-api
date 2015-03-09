@@ -49,19 +49,13 @@ module.exports = function(aclBackend) {
         var resource = util.format('%s#%s', req.route.path, req.route.version);
         var permission = req.method.toLowerCase();
 
-        console.dir("KATZE");
-        console.dir(resource);
-        console.dir(permission);
-        console.dir(req.user);
-
-        req.acl.isAllowed(req.user.name, resource, permission, function(err, isAllowed) {
+        req.acl.areAnyRolesAllowed(req.user.role, resource, permission, function(err, isAllowed) {
             if (!!err) {
-                console.log(err);
-                return next(new restify.errors.Internal());
+                return next(new restify.InternalServerError("Something went wrong.."));
             }
 
             if (!isAllowed) {
-                return next(new restify.ForbiddenError());
+                return next(new restify.UnauthorizedError("You don't have the necessary permissions to upload a file"));
             }
 
             return next();

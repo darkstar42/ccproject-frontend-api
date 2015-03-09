@@ -19,11 +19,19 @@ routes.push({
         version: '1'
     },
     middleware: function(req, res, next) {
-        res.send({
-            foo: 'bar'
-        });
+        var userService = this.services.userService;
 
-        return next();
+        userService.getUserByName('katze', function(err, data) {
+            console.log('get user');
+            console.dir(err);
+            console.dir(data);
+
+            res.send({
+                foo: data
+            });
+
+            return next();
+        });
     }
 });
 

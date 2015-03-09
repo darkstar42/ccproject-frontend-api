@@ -19,7 +19,7 @@ var CORSHelper = function(options) {
         console.dir(req.method);
 
         if (req.method.toLowerCase() !== 'options') {
-            return res.send(new restify.errors.MethodNotAllowed());
+            return res.send(new restify.MethodNotAllowedError());
         }
 
         allowedOrigins.forEach(function(anOrigin) {
@@ -30,7 +30,7 @@ var CORSHelper = function(options) {
 
         if (!originAllowed) {
             res.header('Access-Control-Allow-Origin', '');
-            return res.send(new restify.errors.MethodNotAllowed());
+            return res.send(new restify.MethodNotAllowedError());
         }
 
         res.header('Access-Control-Allow-Headers', allowedHeaders.join(', '));

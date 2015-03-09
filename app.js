@@ -10,9 +10,17 @@ if (!process.env.NODE_ENV) {
 var path = require('path');
 var restify = require('restify');
 var bunyan = require('bunyan');
+var aws = require('aws-sdk');
+var nconf = require('nconf');
 
-var nconf = require('nconf').file({
-    file: path.join(__dirname, 'config', 'global.json')
+var conf = require('nconf')
+    .file({ file: path.join(__dirname, 'config', 'global.json') })
+    .file('aws', { file: path.join(__dirname, 'config', 'aws.json') });
+
+aws.config.update({
+    accessKeyId: conf.get('AWS:AccessKeyId'),
+    secretAccessKey: conf.get('AWS:SecretAccessKey'),
+    region: conf.get('AWS:Region')
 });
 
 /**
@@ -20,14 +28,14 @@ var nconf = require('nconf').file({
  */
 var ConsoleStream = require(path.join(__dirname, 'helpers', 'consoleStream.js'));
 var Logger = bunyan.createLogger({
-    name: nconf.get('Logging:Name'),
+    name: conf.get('Logging:Name'),
     serializers: {
         req: bunyan.stdSerializers.req,
         res: bunyan.stdSerializers.res
     },
     streams: [
         {
-            path: path.join(nconf.get('Logging:Dir'), process.env.NODE_ENV + '-' + nconf.get('Server:Name') + '.log')
+            path: path.join(conf.get('Logging:Dir'), process.env.NODE_ENV + '-' + conf.get('Server:Name') + '.log')
         },
         {
             stream: process.stdout,
@@ -40,9 +48,9 @@ var Logger = bunyan.createLogger({
  * Server
  */
 var server = restify.createServer({
-    name: nconf.get('Server:Name'),
-    version: nconf.get('Server:DefaultVersion'),
-    acceptable: nconf.get('Server:Acceptable'),
+    name: conf.get('Server:Name'),
+    version: conf.get('Server:DefaultVersion'),
+    acceptable: conf.get('Server:Acceptable'),
     log: Logger
 });
 
@@ -50,8 +58,8 @@ var server = restify.createServer({
  * Server plugins
  */
 var throttleOptions = {
-    rate: nconf.get('Server:ThrottleRate'),
-    burst: nconf.get('Server:ThrottleBurst'),
+    rate: conf.get('Server:ThrottleRate'),
+    burst: conf.get('Server:ThrottleBurst'),
     ip: true,
     username: false
 };
@@ -64,11 +72,11 @@ var plugins = [
     restify.fullResponse()
 ];
 
-if (nconf.get('Security:UseAuth')) {
+if (conf.get('Security:UseAuth')) {
     plugins.push(require(path.join(__dirname, 'plugins', 'authorizationParser'))());
 }
 
-if (nconf.get('Security:UseACL')) {
+if (conf.get('Security:UseACL')) {
     plugins.push(require(path.join(__dirname, 'plugins', 'aclPlugin'))());
 }
 
@@ -81,9 +89,9 @@ server.use(plugins);
  * CORS
  */
 var corsOptions = {
-    origins: nconf.get('CORS:Origins'),
-    credentials: nconf.get('CORS:Credentials'),
-    headers: nconf.get('CORS:Headers')
+    origins: conf.get('CORS:Origins'),
+    credentials: conf.get('CORS:Credentials'),
+    headers: conf.get('CORS:Headers')
 };
 
 server.pre(restify.CORS(corsOptions));
@@ -129,18 +137,23 @@ var setupMiddleware = function(middlewareName) {
 
 [
     'root',
-    'auth'
+    'auth',
+    'upload'
 ].forEach(setupMiddleware);
+
+server.services = {};
+server.services.fileService = require('./services/file')(server);
+server.services.userService = require('./services/user')(server);
 
 /**
  * Listen
  */
 var listen = function(done) {
-    server.listen(nconf.get('Server:Port'), function() {
+    server.listen(conf.get('Server:Port'), function() {
         if (done) return done();
 
         console.log();
-        console.log('%s now listening on %s', nconf.get('App:Name'), server.url);
+        console.log('%s now listening on %s', conf.get('App:Name'), server.url);
         console.log();
     });
 };
