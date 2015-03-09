@@ -9,10 +9,18 @@ var FileService = function(app) {
 
     this.dynamoDB = new aws.DynamoDB();
 
+    this.setupEntriesTable();
+};
+
+FileService.prototype.setupEntriesTable = function() {
     var params = {
         AttributeDefinitions: [
             {
-                AttributeName: 'fileId',
+                AttributeName: 'entryId',
+                AttributeType: 'S'
+            },
+            {
+                AttributeName: 'kind',
                 AttributeType: 'S'
             },
             {
@@ -22,15 +30,19 @@ var FileService = function(app) {
         ],
         KeySchema: [
             {
-                AttributeName: 'fileId',
+                AttributeName: 'entryId',
                 KeyType: 'HASH'
+            },
+            {
+                AttributeName: 'kind',
+                KeyType: 'RANGE'
             }
         ],
         ProvisionedThroughput: {
             ReadCapacityUnits: 1,
             WriteCapacityUnits: 1
         },
-        TableName: 'CCFiles',
+        TableName: 'CCEntries',
         GlobalSecondaryIndexes: [
             {
                 IndexName: 'parentIdx',
@@ -57,26 +69,61 @@ var FileService = function(app) {
     });
 };
 
-FileService.prototype.getFile = function(fileId, callback) {
+FileService.prototype.getFile = function(entryId, callback) {
     if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
 
     var params = {
         Key: {
-            fileId: {
-                S: fileId
+            entryId: {
+                S: entryId
+            },
+            kind: {
+                S: 'file'
             }
         },
-        TableName: 'CCFiles'
+        TableName: 'CCEntries'
     };
+
+    var self = this;
 
     this.dynamoDB.getItem(params, function(err, data) {
         if (err) return callback(err);
+        if (typeof data.Item === 'undefined') return callback(null, null);
 
-        callback(null, data);
+        var file = self.mapDBFile(data.Item);
+
+        callback(null, file);
     });
 };
 
-FileService.prototype.getFilesByParent = function(parentId, callback) {
+FileService.prototype.getFolder = function(entryId, callback) {
+    if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
+
+    var params = {
+        Key: {
+            entryId: {
+                S: entryId
+            },
+            kind: {
+                S: 'folder'
+            }
+        },
+        TableName: 'CCEntries'
+    };
+
+    var self = this;
+
+    this.dynamoDB.getItem(params, function(err, data) {
+        if (err) return callback(err);
+        if (typeof data.Item === 'undefined') return callback(null, null);
+
+        var folder = self.mapDBFolder(data.Item);
+
+        callback(null, folder);
+    });
+};
+
+FileService.prototype.getEntriesByParent = function(parentId, callback) {
     if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
 
     var self = this;
@@ -92,7 +139,7 @@ FileService.prototype.getFilesByParent = function(parentId, callback) {
                 ]
             }
         },
-        TableName: 'CCFiles',
+        TableName: 'CCEntries',
         IndexName: 'parentIdx',
         Select: 'ALL_ATTRIBUTES'
     };
@@ -100,15 +147,28 @@ FileService.prototype.getFilesByParent = function(parentId, callback) {
     this.dynamoDB.query(params, function(err, data) {
         if (err) return callback(err);
 
-        var files = [];
+        var entries = [];
 
         if (data.Count && data.Count > 0) {
             var items = data.Items;
 
-            files = items;
+            items.forEach(function(entry) {
+                var kind = entry.kind['S'];
+
+                switch (kind) {
+                    case 'file':
+                        var file = self.mapDBFile(entry);
+                        entries.push(file);
+                        break;
+                    case 'folder':
+                        var folder = self.mapDBFolder(entry);
+                        entries.push(folder);
+                        break;
+                }
+            });
         }
 
-        callback(null, files);
+        callback(null, entries);
     });
 };
 
@@ -117,12 +177,15 @@ FileService.prototype.saveFile = function(file, callback) {
 
     var params = {
         Key: {
-            fileId: {
-                S: file.fileId
+            entryId: {
+                S: file.entryId
+            },
+            kind: {
+                S: 'file'
             }
         },
-        TableName: 'CCFiles',
-        UpdateExpression: 'set #title = :title, #mimeType = :mimeType, #originalFilename = :originalFilename, #filesize = :filesize, #downloadUrl = :downloadUrl, #createdDate = :createdDate, #modifiedDate = :modifiedDate',
+        TableName: 'CCEntries',
+        UpdateExpression: 'set #parentId = :parentId, #title = :title, #mimeType = :mimeType, #originalFilename = :originalFilename, #filesize = :filesize, #downloadUrl = :downloadUrl, #createdDate = :createdDate, #modifiedDate = :modifiedDate',
         ExpressionAttributeNames: {
             '#parentId': 'parentId',
             '#title': 'title',
@@ -135,19 +198,19 @@ FileService.prototype.saveFile = function(file, callback) {
         },
         ExpressionAttributeValues: {
             ':parentId': {
-                'S': file.parentId
+                'S': 'null'
             },
             ':title': {
                 'S': file.title
             },
             ':mimeType': {
-                'S': file.mimeType
+                'S': file.mimeType || 'application/octet-stream'
             },
             ':originalFilename': {
                 'S': file.originalFilename
             },
             ':filesize': {
-                'N': file.filesize
+                'N': file.filesize + ''
             },
             ':downloadUrl': {
                 'S': file.downloadUrl
@@ -168,9 +231,56 @@ FileService.prototype.saveFile = function(file, callback) {
     });
 };
 
+FileService.prototype.saveFolder = function(folder, callback) {
+    if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
+
+    var params = {
+        Key: {
+            entryId: {
+                S: folder.entryId
+            },
+            kind: {
+                S: 'folder'
+            }
+        },
+        TableName: 'CCEntries',
+        UpdateExpression: 'set #parentId = :parentId, #title = :title, #createdDate = :createdDate, #modifiedDate = :modifiedDate',
+        ExpressionAttributeNames: {
+            '#parentId': 'parentId',
+            '#title': 'title',
+            '#createdDate': 'createdDate',
+            '#modifiedDate': 'modifiedDate'
+        },
+        ExpressionAttributeValues: {
+            ':parentId': {
+                'S': 'null'
+            },
+            ':title': {
+                'S': folder.title
+            },
+            ':createdDate': {
+                'S': folder.createdDate.toISOString()
+            },
+            ':modifiedDate': {
+                'S': folder.modifiedDate.toISOString()
+            }
+        }
+    };
+
+    this.dynamoDB.updateItem(params, function(err, data) {
+        if (err) return callback(err);
+
+        callback(null);
+    });
+};
+
 FileService.prototype.mapDBFile = function(dbFile) {
+    var parentId = (dbFile.parentId['S'] === 'null') ? null : dbFile.parentId['S'];
+
     return {
-        parentId: dbFile.parentId['S'],
+        kind: 'file',
+        entryId: dbFile.entryId['S'],
+        parentId: parentId,
         title: dbFile.title['S'],
         mimeType: dbFile.mimeType['S'],
         originalFilename: dbFile.originalFilename['S'],
@@ -181,14 +291,40 @@ FileService.prototype.mapDBFile = function(dbFile) {
     };
 };
 
+FileService.prototype.mapDBFolder = function(dbFolder) {
+    var parentId = (dbFolder.parentId['S'] === 'null') ? null : dbFolder.parentId['S'];
+
+    return {
+        kind: 'folder',
+        entryId: dbFolder.entryId['S'],
+        parentId: parentId,
+        title: dbFolder.title['S'],
+        createdDate: new Date(dbFolder.createdDate['S']),
+        modifiedDate: new Date(dbFolder.modifiedDate['S'])
+    };
+};
+
 FileService.prototype.createFile = function(parentId, title) {
     return {
+        kind: 'file',
+        entryId: uuid.v4(),
         parentId: parentId,
         title: title,
-        mimeType: '',
-        originalFilename: '',
+        mimeType: 'application/octet-stream',
+        originalFilename: title,
         filesize: 42,
         downloadUrl: 'http://cs.umu.se',
+        createdDate: new Date(),
+        modifiedDate: new Date()
+    };
+};
+
+FileService.prototype.createFolder = function(parentId, title) {
+    return {
+        kind: 'folder',
+        entryId: uuid.v4(),
+        parentId: parentId,
+        title: title,
         createdDate: new Date(),
         modifiedDate: new Date()
     };
