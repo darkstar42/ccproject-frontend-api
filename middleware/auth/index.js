@@ -89,6 +89,7 @@ routes.push({
         version: '1'
     },
     middleware: function(req, res, next) {
+        var fileService = this.services.fileService;
         var userService = this.services.userService;
 
         var username = req.body.username;
@@ -101,10 +102,26 @@ routes.push({
         var registerUser = function(callback) {
             var user = userService.createUser(username, password, 'user');
 
-            userService.saveUser(user, function(err) {
+            createRootFolder(function(err, folder) {
                 if (err) return callback(err);
 
-                callback(null, user);
+                user.attributes.rootFolderId = folder.entryId;
+
+                userService.saveUser(user, function(err) {
+                    if (err) return callback(err);
+
+                    callback(null, user);
+                });
+            });
+        };
+
+        var createRootFolder = function(callback) {
+            var folder = fileService.createFolder(null, 'root');
+
+            fileService.saveFolder(folder, function(err) {
+                if (err) return callback(err);
+
+                callback(null, folder);
             });
         };
 
