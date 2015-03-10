@@ -65,6 +65,18 @@
             {
               "resources": "/upload#1",
               "permissions": [ "post" ]
+            },
+            {
+              "resources": "/about#1",
+              "permissions": [ "get" ]
+            },
+            {
+              "resources": "/folders/:entryId#1",
+              "permissions": [ "get" ]
+            },
+            {
+              "resources": "/folders/:entryId/children#1",
+              "permissions": [ "get" ]
             }
           ]
         }

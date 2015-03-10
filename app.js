@@ -136,8 +136,10 @@ var setupMiddleware = function(middlewareName) {
 };
 
 [
-    'root',
+    'about',
     'auth',
+    'folders',
+    'root',
     'upload'
 ].forEach(setupMiddleware);
 
