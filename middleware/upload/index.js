@@ -28,15 +28,22 @@ routes.push({
         version: '1'
     },
     middleware: function(req, res, next) {
+        var fileService = this.services.fileService;
+
         console.log('XXXX: BODY', req.body);
         console.log('XXXX params', req.params);
         console.log('XXXX UPLOADED FILES', req.files);
 
-        res.send({
-            katze: 'blubb'
-        });
+        fileService.upload(req.params.folderId, req.files.file, function(err, file) {
+            console.dir(err);
+            console.dir(file);
 
-        return next();
+            res.send({
+                file: file
+            });
+
+            return next();
+        });
     }
 });
 

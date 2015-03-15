@@ -3,13 +3,31 @@
 var uuid = require('node-uuid');
 var bcrypt = require('bcrypt');
 var aws = require('aws-sdk');
+var fs = require('fs');
 
 var FileService = function(app) {
     this.app = app;
 
     this.dynamoDB = new aws.DynamoDB();
+    this.s3 = new aws.S3({apiVersion: '2006-03-01'});
 
     this.setupEntriesTable();
+    this.setupS3();
+};
+
+FileService.prototype.setupS3 = function() {
+    var params = {
+        Bucket: 'ccstore',
+        ACL: 'public-read',
+        CreateBucketConfiguration: {
+            LocationConstraint: 'eu-west-1'
+        }
+    };
+
+    this.s3.createBucket(params, function(err, data) {
+        console.dir(err);
+        console.dir(data);
+    });
 };
 
 FileService.prototype.setupEntriesTable = function() {
@@ -198,7 +216,7 @@ FileService.prototype.saveFile = function(file, callback) {
         },
         ExpressionAttributeValues: {
             ':parentId': {
-                'S': 'null'
+                'S': file.parentId
             },
             ':title': {
                 'S': file.title
@@ -328,6 +346,44 @@ FileService.prototype.createFolder = function(parentId, title) {
         createdDate: new Date(),
         modifiedDate: new Date()
     };
+};
+
+FileService.prototype.upload = function(folderId, file, callback) {
+    var fileName = file.name;
+    var fileObj = this.createFile(folderId, fileName);
+        fileObj.mimeType = file.type;
+        fileObj.filesize = file.size;
+    var fileKey = fileObj.entryId;
+
+    console.dir(fileObj);
+
+    var s3 = this.s3;
+    var self = this;
+
+    var stream = fs.createReadStream(file.path);
+    var params = {
+        Bucket: 'ccstore', 
+        Key: fileKey,
+        ACL: 'public-read',
+        Body: stream
+    };
+
+    s3.upload(params, function(err, data) {
+        console.dir(err);
+        console.dir(data);
+
+        var url = s3.getSignedUrl('getObject', {
+            Bucket: 'ccstore',
+            Key: fileKey
+        }, function(err, url) {
+            // TODO - error handling
+            fileObj.downloadUrl = url;
+
+            self.saveFile(fileObj, function(err) {
+                callback(err, fileObj);
+            });
+        });
+    });
 };
 
 /**
