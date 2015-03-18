@@ -138,6 +138,7 @@ var setupMiddleware = function(middlewareName) {
 [
     'about',
     'auth',
+    'files',
     'folders',
     'root',
     'upload'

@@ -72,11 +72,19 @@
             },
             {
               "resources": "/folders/:entryId#1",
-              "permissions": [ "get" ]
+              "permissions": [ "get", "delete" ]
             },
             {
               "resources": "/folders/:entryId/children#1",
               "permissions": [ "get" ]
+            },
+            {
+              "resources": "/folders#1",
+              "permissions": [ "post" ]
+            },
+            {
+              "resources": "/files/:entryId#1",
+              "permissions": [ "get", "delete" ]
             }
           ]
         }

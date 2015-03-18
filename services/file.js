@@ -87,6 +87,62 @@ FileService.prototype.setupEntriesTable = function() {
     });
 };
 
+FileService.prototype.deleteFile = function(entryId, callback) {
+    if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
+
+    var self = this;
+
+    this.getFile(entryId, function(err, file) {
+        if (err) throw new Error('Internal error while loading file');
+
+        var params = {
+            Key: {
+                entryId: {
+                    S: entryId
+                },
+                kind: {
+                    S: 'file'
+                }
+            },
+            TableName: 'CCEntries'
+        };
+
+        self.dynamoDB.deleteItem(params, function(err, data) {
+            if (err) return callback(err);
+
+            callback(null, file);
+        });
+    });
+};
+
+FileService.prototype.deleteFolder = function(entryId, callback) {
+    if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
+
+    var self = this;
+
+    this.getFolder(entryId, function(err, folder) {
+        if (err) throw new Error('Internal error while loading folder');
+
+        var params = {
+            Key: {
+                entryId: {
+                    S: entryId
+                },
+                kind: {
+                    S: 'folder'
+                }
+            },
+            TableName: 'CCEntries'
+        };
+
+        self.dynamoDB.deleteItem(params, function(err, data) {
+            if (err) return callback(err);
+
+            callback(null, folder);
+        });
+    });
+};
+
 FileService.prototype.getFile = function(entryId, callback) {
     if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
 
@@ -252,6 +308,10 @@ FileService.prototype.saveFile = function(file, callback) {
 FileService.prototype.saveFolder = function(folder, callback) {
     if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
 
+    if (folder.entryId === null) {
+        folder.entryId = uuid.v4();
+    }
+
     var params = {
         Key: {
             entryId: {
@@ -271,7 +331,7 @@ FileService.prototype.saveFolder = function(folder, callback) {
         },
         ExpressionAttributeValues: {
             ':parentId': {
-                'S': 'null'
+                'S': folder.parentId
             },
             ':title': {
                 'S': folder.title

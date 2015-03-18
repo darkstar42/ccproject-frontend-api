@@ -34,6 +34,7 @@ var CORSHelper = function(options) {
         }
 
         res.header('Access-Control-Allow-Headers', allowedHeaders.join(', '));
+        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
 
         return res.send(200);
     };

@@ -73,6 +73,74 @@ routes.push({
 });
 
 /**
+ * POST /folders
+ * Version: 1
+ */
+routes.push({
+    meta: {
+        name: 'saveFolder',
+        method: 'POST',
+        paths: [
+            '/folders'
+        ],
+        version: '1'
+    },
+    middleware: function(req, res, next) {
+        var fileService = this.services.fileService;
+        var folder = req.body.folder;
+
+        if (!folder) {
+            return next(new restify.BadRequestError("No folder to save"));
+        }
+
+        folder.createdDate = new Date(folder.createdDate);
+        folder.modifiedDate = new Date(folder.modifiedDate);
+
+        fileService.saveFolder(folder, function(err) {
+            if (err) return next(new restify.InternalError("Could not save the folder"));
+
+            res.send({
+                status: 'success',
+                folder: folder
+            });
+
+            return next();
+        });
+    }
+});
+
+/**
+ * DELETE /folders/:entryId
+ * Version: 1
+ */
+routes.push({
+    meta: {
+        name: 'deleteFolder',
+        method: 'DEL',
+        paths: [
+            '/folders/:entryId'
+        ],
+        version: '1'
+    },
+    middleware: function(req, res, next) {
+        var fileService = this.services.fileService;
+        var entryId = req.params.entryId;
+
+        fileService.deleteFolder(entryId, function(err, folder) {
+            if (err) return next(new restify.InternalError("Could not delete the folder"));
+
+            res.send({
+                status: 'success',
+                kind: 'folder',
+                folder: folder
+            });
+
+            return next();
+        });
+    }
+});
+
+/**
  * Export
  */
 module.exports = routes;

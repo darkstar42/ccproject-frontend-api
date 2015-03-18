@@ -19,8 +19,22 @@ routes.push({
         version: '1'
     },
     middleware: function(req, res, next) {
+        var fileService = this.services.fileService;
         var userService = this.services.userService;
 
+        userService.getUserByName('hund', function(err, user) {
+            console.log('load user');
+            console.dir(err);
+            console.dir(user);
+
+            res.send({
+                user: user
+            });
+
+            return next();
+        });
+
+        /*
         userService.getUserByName('katze', function(err, data) {
             console.log('get user');
             console.dir(err);
@@ -32,6 +46,7 @@ routes.push({
 
             return next();
         });
+        */
     }
 });
 

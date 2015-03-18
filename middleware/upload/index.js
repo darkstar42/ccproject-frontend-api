@@ -39,6 +39,7 @@ routes.push({
             console.dir(file);
 
             res.send({
+                status: 'success',
                 file: file
             });
 
