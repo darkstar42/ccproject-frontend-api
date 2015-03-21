@@ -54,6 +54,8 @@ var server = restify.createServer({
     log: Logger
 });
 
+server.conf = conf;
+
 /**
  * Server plugins
  */
@@ -140,6 +142,7 @@ var setupMiddleware = function(middlewareName) {
     'auth',
     'files',
     'folders',
+    'jobs',
     'root',
     'upload'
 ].forEach(setupMiddleware);
@@ -147,6 +150,7 @@ var setupMiddleware = function(middlewareName) {
 server.services = {};
 server.services.fileService = require('./services/file')(server);
 server.services.userService = require('./services/user')(server);
+server.services.jobService = require('./services/job')(server);
 
 /**
  * Listen

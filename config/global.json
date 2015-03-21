@@ -12,6 +12,12 @@
     "ThrottleBurst": 100
   },
 
+  "AWS": {
+    "SQS": {
+      "QueueUrl": "https://sqs.us-east-1.amazonaws.com/260150743080/CCStoreJobs"
+    }
+  },
+
   "Logging": {
     "Name": "AuditLogging",
     "Dir": "./logs/"
@@ -88,6 +94,10 @@
             },
             {
               "resources": "/files#1",
+              "permissions": [ "post" ]
+            },
+            {
+              "resources": "/jobs#1",
               "permissions": [ "post" ]
             }
           ]
