@@ -85,6 +85,10 @@
             {
               "resources": "/files/:entryId#1",
               "permissions": [ "get", "delete" ]
+            },
+            {
+              "resources": "/files#1",
+              "permissions": [ "post" ]
             }
           ]
         }
