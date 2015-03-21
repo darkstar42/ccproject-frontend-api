@@ -432,16 +432,10 @@ FileService.prototype.upload = function(folderId, file, callback) {
         console.dir(err);
         console.dir(data);
 
-        var url = s3.getSignedUrl('getObject', {
-            Bucket: 'ccstore',
-            Key: fileKey
-        }, function(err, url) {
-            // TODO - error handling
-            fileObj.downloadUrl = url;
+        fileObj.downloadUrl = 'https://s3-eu-west-1.amazonaws.com/ccstore/' + fileKey;
 
-            self.saveFile(fileObj, function(err) {
-                callback(err, fileObj);
-            });
+        self.saveFile(fileObj, function(err) {
+            callback(err, fileObj);
         });
     });
 };
