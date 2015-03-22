@@ -99,7 +99,11 @@
             {
               "resources": "/jobs#1",
               "permissions": [ "post" ]
-            }
+            },
+            {
+              "resources": "/notifications#1",
+              "permissions": [ "get", "post" ]
+            },
           ]
         }
       ]
