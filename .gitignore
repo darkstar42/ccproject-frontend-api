@@ -18,3 +18,7 @@ config/aws.json
 node_modules
 npm-debug.log
 
+
+# Deployment
+.travis/travisci_rsa
+*.deb
