@@ -87,7 +87,7 @@ NotificationService.prototype.getNotifications = function(userId, callback) {
             var items = data.Items;
 
             for (var i = 0; i < items.length; i++) {
-                var notification = self.mapDBNotification(items[0]);
+                var notification = self.mapDBNotification(items[i]);
 
                 notifications.push(notification);
             }
