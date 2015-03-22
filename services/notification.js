@@ -61,18 +61,37 @@ NotificationService.prototype.getNotifications = function(userId, callback) {
     if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
 
     var params = {
-        Key: {
+        KeyConditions: {
             userId: {
-                S: userId
+                ComparisonOperator: 'EQ',
+                AttributeValueList: [
+                    {
+                        S: userId
+                    }
+                ]
             }
         },
-        TableName: 'CCnotifications'
+        TableName: 'CCNotifications',
+        IndexName: 'userIdIdx',
+        Select: 'ALL_ATTRIBUTES'
     };
 
-    this.dynamoDB.getItem(params, function(err, data) {
+    this.dynamoDB.query(params, function(err, data) {
         if (err) return callback(err);
 
-        callback(null, data);
+        var notifications = [];
+
+        if (data.Count && data.Count > 0) {
+            var items = data.Items;
+
+            for (var i = 0; i < items.length; i++) {
+                var notification = self.mapDBNotification(items[0]);
+
+                notifications.push(notification);
+            }
+        }
+
+        callback(null, notifications);
     });
 };
 

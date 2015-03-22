@@ -103,7 +103,7 @@
             {
               "resources": "/notifications#1",
               "permissions": [ "get", "post" ]
-            },
+            }
           ]
         }
       ]

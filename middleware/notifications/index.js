@@ -28,15 +28,19 @@ routes.push({
         ],
         version: '1'
     },
-    middleware: function(req, res, next) {
+    middleware: function (req, res, next) {
         var notificationService = this.services.notificationService;
         var userId = req.user.name;
 
-        notificationService.getNotifications(userId, function(err, notifications) {
+        notificationService.getNotifications(userId, function (err, notifications) {
+            console.dir(err);
             if (err) return next(new restify.InternalError("Could not load requested notifications"));
             if (notifications === null) return next(new restify.BadRequestError("Notifications not found"));
 
-            res.send(notifications);
+            res.send({
+                status: 'success',
+                notifications: notifications
+            });
 
             return next();
         });
@@ -56,7 +60,7 @@ routes.push({
         ],
         version: '1'
     },
-    middleware: function(req, res, next) {
+    middleware: function (req, res, next) {
         var notificationService = this.services.notificationService;
         var notification = req.body.notification;
 
@@ -64,7 +68,7 @@ routes.push({
             return next(new restify.BadRequestError("No notification to save"));
         }
 
-        notificationService.saveNotification(notification, function(err) {
+        notificationService.saveNotification(notification, function (err) {
             if (err) return next(new restify.InternalError("Could not save the notification"));
 
             res.send({
