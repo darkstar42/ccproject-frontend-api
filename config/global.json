@@ -4,7 +4,7 @@
   },
 
   "Server": {
-    "Port": 1337,
+    "Port": 80,
     "Name": "api.example.com",
     "DefaultVersion": "0.0.1",
     "Acceptable": [ "application/json" ],
