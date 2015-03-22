@@ -60,6 +60,8 @@ var NotificationService = function(app) {
 NotificationService.prototype.getNotifications = function(userId, callback) {
     if (typeof callback !== 'function') throw new Error('Last parameter must be a callback function');
 
+    var self = this;
+
     var params = {
         KeyConditions: {
             userId: {
