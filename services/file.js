@@ -331,7 +331,7 @@ FileService.prototype.saveFolder = function(folder, callback) {
         },
         ExpressionAttributeValues: {
             ':parentId': {
-                'S': folder.parentId
+                'S': (folder.parentId === null) ? 'null' : folder.parentId
             },
             ':title': {
                 'S': folder.title
