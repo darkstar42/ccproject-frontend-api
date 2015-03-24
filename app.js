@@ -35,7 +35,7 @@ var Logger = bunyan.createLogger({
     },
     streams: [
         {
-            path: path.join(conf.get('Logging:Dir'), process.env.NODE_ENV + '-' + conf.get('Server:Name') + '.log')
+            path: path.join(__dirname, conf.get('Logging:Dir'), process.env.NODE_ENV + '-' + conf.get('Server:Name') + '.log')
         },
         {
             stream: process.stdout,
@@ -143,12 +143,14 @@ var setupMiddleware = function(middlewareName) {
     'files',
     'folders',
     'jobs',
+    'notifications',
     'root',
     'upload'
 ].forEach(setupMiddleware);
 
 server.services = {};
 server.services.fileService = require('./services/file')(server);
+server.services.notificationService = require('./services/notification')(server);
 server.services.userService = require('./services/user')(server);
 server.services.jobService = require('./services/job')(server);
 
